@@ -1,5 +1,6 @@
 $schema: "1.0"
 name: "frontend-eng"
+# Using the "Windows 11 Enterprise + Microsoft 365 Apps 24H2" image as the base
 image: microsoftwindowsdesktop_windows-ent-cpc_win11-24H2-ent-cpc
 description: "This definition is for the eShop frontend engineering environment"
 
