@@ -1,0 +1,33 @@
+$schema: "1.0"
+name: "dev-environment-for-dsc"
+image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
+tasks:
+  - name: winget
+    description: Install Visual Studio Code
+    parameters:
+      package: Microsoft.VisualStudioCode
+  - name: winget
+    description: Install PowerShell 7
+    parameters:
+      package: Microsoft.PowerShell
+  - name: winget
+    description: Install Desired State Configuration (DSC)
+    parameters:
+      package: 9PCX3HX4HZ0Z
+  - name: winget
+    description: Install Bicep CLI
+    parameters:
+      package: Microsoft.Bicep
+  - name: powershell
+    description: Install Bicep extension for Visual Studio Code
+    parameters:
+      script: |
+        code --install-extension ms-azuretools.vscode-bicep
+  - name: powershell
+    description: Create bicepconfig.json file
+    parameters:
+      script: |
+        $bicepConfigJson = '{"experimentalFeaturesEnabled":{"desiredStateConfiguration":true,"localDeploy":true}}'
+        $bicepConfigPath = "C:\Workspaces\trydsc\bicepconfig.json"
+        New-Item -Path "C:\Workspaces\trydsc" -ItemType Directory -Force | Out-Null
+        Set-Content -Path $bicepConfigPath -Value $bicepConfigJson -Force
