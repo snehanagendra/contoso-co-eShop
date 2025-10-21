@@ -32,4 +32,4 @@ userTasks:
     displayName: "Configure Bicep DSC Environment"
     description: Create bicepconfig.json file
     parameters:
-      configurationFile: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc02\dev-environment-with-vscode\write-bicep-config.ps1
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc02\dev-environment-with-vscode\write-bicep-config.ps1
