@@ -1,6 +1,6 @@
 $schema: "1.0"
 name: "dev-environment-with-vscode"
-image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
+imag: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
 userTasks:
   - name: ~/winget
     displayName: "Install VS Code"
