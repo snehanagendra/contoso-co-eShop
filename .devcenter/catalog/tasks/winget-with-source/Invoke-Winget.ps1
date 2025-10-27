@@ -298,7 +298,7 @@ if ($Package) {
     $installerAlreadyRunningRetries = 0
 
     $installCommandBlock = {
-        $installPackageCommand = "try {Install-WinGetPackage -Scope $($scopeFlagValue) -Mode Silent -Source winget -Id '$($Package)' $($versionFlag) | ConvertTo-Json -Depth 10 | Tee-Object -FilePath '$($tempOutFile)'} catch { `$_.Exception.Message | Out-File -FilePath '$($tempErrFile)'; throw}"
+        $installPackageCommand = "try {Install-WinGetPackage -Scope $($scopeFlagValue) -Mode Silent -Source $($Source) -Id '$($Package)' $($versionFlag) | ConvertTo-Json -Depth 10 | Tee-Object -FilePath '$($tempOutFile)'} catch { `$_.Exception.Message | Out-File -FilePath '$($tempErrFile)'; throw}"
         $processCreation = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine = "C:\Program Files\PowerShell\7\pwsh.exe $($mtaFlag) -Command `"$($installPackageCommand)`"" }
         if (!($processCreation) -or !($processCreation.ProcessId)) {
             Write-Host "Failed to install package. Process creation failed."
