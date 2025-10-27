@@ -17,6 +17,9 @@ The name of the package to install. This is an alternative way. If a config yaml
 .PARAMETER Version
 The version of the package to install. If a config yaml file is provided under other parameters, there is no need for the package version.
 
+.PARAMETER Source
+The package source
+
 .DESCRIPTION
 The script supports provisioning a system by either installing a package or applying a configuration file using WinGet. If PowerShell 7 or required dependencies are missing, it installs them as well.
 
