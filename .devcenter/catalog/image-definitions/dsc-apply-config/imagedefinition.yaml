@@ -16,7 +16,7 @@ tasks:
     displayName: "Install DSC Preview"
     description: Install Desired State Configuration (DSC)
     parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-apply-config-catalog-01\dsc-apply-config\write-bicep-config.ps1
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-apply-config-catalog-01\dsc-apply-config\winget-install-store.ps1
   - name: ~/winget
     displayName: "Install Bicep CLI"
     description: Install Bicep CLI
