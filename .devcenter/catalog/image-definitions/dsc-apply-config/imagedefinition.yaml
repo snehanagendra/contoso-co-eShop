@@ -1,0 +1,41 @@
+$schema: "1.0"
+name: "dsc-apply-config"
+image: microsoftvisualstudio_visualstudioplustools_vs-2022-ent-general-win11-m365-gen2
+tasks:
+  - name: ~/winget
+    displayName: "Install VS Code"
+    description: Install Visual Studio Code
+    parameters:
+      package: Microsoft.VisualStudioCode
+  - name: ~/winget
+    displayName: "Install PowerShell 7"
+    description: Install PowerShell 7
+    parameters:
+      package: Microsoft.PowerShell
+  - name: ~/powershell
+    displayName: "Install DSC Preview"
+    description: Install Desired State Configuration (DSC)
+    parameters:
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-apply-config-catalog-01\dsc-apply-config\write-bicep-config.ps1
+  - name: ~/winget
+    displayName: "Install Bicep CLI"
+    description: Install Bicep CLI
+    parameters:
+      package: Microsoft.Bicep
+      version: 0.36.177
+  - name: ~/powershell
+    displayName: "Install Bicep VS Code Extension"
+    description: Install Bicep extension for Visual Studio Code
+    parameters:
+      command: |
+        code --install-extension ms-azuretools.vscode-bicep
+  - name: ~/powershell
+    displayName: "Configure Bicep DSC Environment"
+    description: Create bicepconfig.json file
+    parameters:
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-apply-config-catalog-01\dsc-apply-config\write-bicep-config.ps1
+  - name: ~/powershell
+    displayName: "Apply DSC Configuration"
+    description: Apply the Desired State Configuration (DSC) to the system
+    parameters:
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-apply-config-catalog-01\dsc-apply-config\apply-dsc-config.ps1
