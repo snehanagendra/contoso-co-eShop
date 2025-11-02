@@ -49,41 +49,100 @@ catch {
 # Download the MSIX bundle
 $msixPath = Join-Path $OutputFolder $msixAsset.name
 Write-Host "Downloading MSIX bundle to: $msixPath"
+Write-Host "Download URL: $($msixAsset.browser_download_url)"
+Write-Host "File size from GitHub: $([math]::Round($msixAsset.size / 1MB, 2)) MB"
 
+Write-Host "Starting download with Invoke-WebRequest..."
 try {
+    $downloadStartTime = Get-Date
+    Write-Host "Download started at: $downloadStartTime"
+    
     Invoke-WebRequest -Uri $msixAsset.browser_download_url -OutFile $msixPath -UseBasicParsing
-    Write-Host "Download completed successfully."
+    
+    $downloadEndTime = Get-Date
+    $downloadDuration = $downloadEndTime - $downloadStartTime
+    
+    Write-Host "Download completed successfully at: $downloadEndTime"
+    Write-Host "Download duration: $($downloadDuration.TotalSeconds) seconds"
 }
 catch {
     Write-Host "Failed to download MSIX bundle: $($_.Exception.Message)"
+    Write-Host "Exception type: $($_.Exception.GetType().FullName)"
+    if ($_.Exception.InnerException) {
+        Write-Host "Inner exception: $($_.Exception.InnerException.Message)"
+    }
+    Write-Host "Failed at: $(Get-Date)"
     exit 1
 }
 
 # Verify the downloaded file
+Write-Host "Verifying downloaded file..."
 if (-not (Test-Path $msixPath)) {
-    Write-Host "Downloaded file not found at: $msixPath"
+    Write-Host "ERROR: Downloaded file not found at: $msixPath"
+    Write-Host "Checking if directory exists: $(Test-Path $OutputFolder)"
+    if (Test-Path $OutputFolder) {
+        Write-Host "Directory contents:"
+        Get-ChildItem $OutputFolder | ForEach-Object { Write-Host "  $($_.Name)" }
+    }
     exit 1
 }
 
-$fileSize = (Get-Item $msixPath).Length
+Write-Host "File verification successful - file exists at: $msixPath"
+$fileItem = Get-Item $msixPath
+$fileSize = $fileItem.Length
 Write-Host "Downloaded file size: $([math]::Round($fileSize / 1MB, 2)) MB"
+Write-Host "File creation time: $($fileItem.CreationTime)"
+Write-Host "File last write time: $($fileItem.LastWriteTime)"
+
+# Verify file is not corrupted (basic check)
+if ($fileSize -lt 1MB) {
+    Write-Host "WARNING: File size seems too small for an MSIX bundle"
+}
+Write-Host "File verification completed successfully."
 
 # Install the MSIX bundle using Add-AppxProvisionedPackage
-Write-Host "Installing WinGet CLI using Add-AppxProvisionedPackage..."
+Write-Host "Starting WinGet CLI installation using Add-AppxProvisionedPackage..."
+Write-Host "Installation method: Add-AppxProvisionedPackage -Online"
+Write-Host "Package path: $msixPath"
 
 try {
-    # Mount the default Windows image (assuming we're provisioning for the system)
-    # Note: This command is typically used for offline Windows images
-    # For online installation, we might need to use Add-AppxPackage instead
+    # Check if running as administrator
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    Write-Host "Running as Administrator: $isAdmin"
     
-    # Use Add-AppxProvisionedPackage to install for all users (system-wide)
-    Write-Host "Using Add-AppxProvisionedPackage for system-wide installation..."
-    Add-AppxProvisionedPackage -Online -PackagePath $msixPath -SkipLicense
+    if (-not $isAdmin) {
+        Write-Host "WARNING: Not running as administrator - this may cause the installation to fail"
+    }
+    
+    Write-Host "Executing Add-AppxProvisionedPackage command..."
+    $installStartTime = Get-Date
+    Write-Host "Installation started at: $installStartTime"
+    
+    Add-AppxProvisionedPackage -Online -PackagePath $msixPath -SkipLicense -Verbose
+    
+    $installEndTime = Get-Date
+    $installDuration = $installEndTime - $installStartTime
+    Write-Host "Installation completed at: $installEndTime"
+    Write-Host "Installation duration: $($installDuration.TotalSeconds) seconds"
     Write-Host "WinGet CLI provisioned successfully for all users."
 }
 catch {
     Write-Host "Failed to install WinGet CLI: $($_.Exception.Message)"
+    Write-Host "Exception type: $($_.Exception.GetType().FullName)"
+    if ($_.Exception.InnerException) {
+        Write-Host "Inner exception: $($_.Exception.InnerException.Message)"
+    }
+    Write-Host "HRESULT (if available): $($_.Exception.HResult)"
     Write-Host "You may need to install dependencies first (Visual C++ Redistributable, etc.)"
+    Write-Host "Failed at: $(Get-Date)"
+    
+    # Additional troubleshooting info
+    Write-Host "System information for troubleshooting:"
+    Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
+    Write-Host "OS version: $($PSVersionTable.OS)"
+    Write-Host "Current user: $($env:USERNAME)"
+    
     exit 1
 }
 

@@ -3,18 +3,37 @@
 $OutputFolder = "$env:Temp\DSC_Install"
 $OutputFolder = "C:\ProgramData\Microsoft\DevBoxAgent\1ES"
 
-# Detect OS and architecture
+# Detect OS and architecture with detailed logging
+Write-Host "=== OS and Architecture Detection ==="
+
+# Log environment information
+Write-Host "PSVersionTable.OS: '$($PSVersionTable.OS)'"
+Write-Host "Environment.OSVersion: '$([Environment]::OSVersion)'"
+Write-Host "Environment.Is64BitOperatingSystem: '$([Environment]::Is64BitOperatingSystem)'"
+Write-Host "PROCESSOR_ARCHITECTURE env var: '$($env:PROCESSOR_ARCHITECTURE)'"
+
 $arch = if ([Environment]::Is64BitOperatingSystem) { "x86_64" } else { "x86" }
-if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { $arch = "aarch64" }
+Write-Host "Initial arch detection: $arch"
+
+if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { 
+    $arch = "aarch64" 
+    Write-Host "ARM64 detected, arch changed to: $arch"
+}
+
+# Hardcode arch for troubleshooting
+$arch = "x86_64"
+Write-Host "Architecture hardcoded to: $arch"
 
 $os = $PSVersionTable.OS
-if ($os -match "Windows") { $platform = "pc-windows-msvc" }
-elseif ($os -match "Darwin") { $platform = "apple-darwin" }
-elseif ($os -match "Linux") { $platform = "pc-linux-gnu" }
-else { Write-Host "Unsupported OS"; exit 1 }
+Write-Host "OS string to match against: '$os'"
 
-Write-Host "Detected architecture: $arch"
-Write-Host "Detected platform: $platform"
+# Hardcode to Windows platform for troubleshooting
+$platform = "pc-windows-msvc"
+Write-Host "Platform hardcoded to: $platform"
+
+Write-Host "Final detected architecture: $arch"
+Write-Host "Final detected platform: $platform"
+Write-Host "=== End Detection ==="
 
 # GitHub API URL for releases
 $targetVersion = "v3.2.0-preview.7"
