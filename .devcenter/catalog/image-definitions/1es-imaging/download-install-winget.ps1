@@ -37,7 +37,27 @@ function Install-Application {
 
         # Use package name with Add-AppxProvisionedPackage
         Write-Host "Using package name '$PackageName' for installation"
-        Add-AppxProvisionedPackage -Online -PackagePath $PackagePath -SkipLicense -Verbose
+        
+        # Detailed path validation before installation
+        Write-Host "Detailed path validation for main package:"
+        Write-Host "  Package path: '$PackagePath'"
+        Write-Host "  Path exists: $(Test-Path $PackagePath -PathType Leaf)"
+        Write-Host "  Directory exists: $(Test-Path (Split-Path $PackagePath -Parent))"
+        Write-Host "  File size: $((Get-Item $PackagePath -ErrorAction SilentlyContinue).Length) bytes"
+        
+        # Try to resolve the path
+        try {
+            $resolvedPackagePath = Resolve-Path $PackagePath -ErrorAction Stop
+            Write-Host "  Resolved path: '$($resolvedPackagePath.Path)'"
+            $finalPackagePath = $resolvedPackagePath.Path
+        }
+        catch {
+            Write-Host "  Could not resolve path: $($_.Exception.Message)"
+            $finalPackagePath = $PackagePath
+        }
+        
+        Write-Host "  Using final path for installation: '$finalPackagePath'"
+        Add-AppxProvisionedPackage -Online -PackagePath $finalPackagePath -PackageName $PackageName -SkipLicense -Verbose
 
         $installEndTime = Get-Date
         $installDuration = $installEndTime - $installStartTime
@@ -215,6 +235,10 @@ if ($dependenciesAsset) {
                 Expand-Archive -Path $dependenciesPath -DestinationPath $dependenciesExtractPath -Force
                 Write-Host "Dependencies extracted successfully."
                 
+                # Wait for file system to settle
+                Write-Host "Waiting 5 seconds for file system operations to complete..."
+                Start-Sleep -Seconds 5
+                
                 # List extracted dependencies
                 if (Test-Path $dependenciesExtractPath) {
                     Write-Host "Extracted dependency files:"
@@ -235,13 +259,50 @@ if ($dependenciesAsset) {
                             Write-Host "Found $($dependencyPackages.Count) dependency package(s) to install:"
                             foreach ($depPackage in $dependencyPackages) {
                                 Write-Host "  Installing: $($depPackage.Name)"
-                                try {
-                                    Add-AppxProvisionedPackage -Online -PackagePath $depPackage.FullName -SkipLicense -Verbose
-                                    Write-Host "  Successfully installed: $($depPackage.Name)"
-                                }
-                                catch {
-                                    Write-Host "  Failed to install $($depPackage.Name): $($_.Exception.Message)"
-                                    Write-Host "  Continuing with other dependencies..."
+                                
+                                # Verify file exists before attempting installation
+                                if (Test-Path $depPackage.FullName -PathType Leaf) {
+                                    $fileSize = (Get-Item $depPackage.FullName).Length
+                                    Write-Host "    File verified: $($depPackage.FullName) ($([math]::Round($fileSize / 1KB, 2)) KB)"
+                                    
+                                    # Additional path validation
+                                    Write-Host "    Detailed path validation:"
+                                    Write-Host "      Full path: '$($depPackage.FullName)'"
+                                    Write-Host "      Directory exists: $(Test-Path (Split-Path $depPackage.FullName -Parent))"
+                                    Write-Host "      File is readable: $(try { $null = Get-Content $depPackage.FullName -TotalCount 1 -ErrorAction Stop; $true } catch { $false })"
+                                    
+                                    # Try to resolve the path
+                                    try {
+                                        $resolvedPath = Resolve-Path $depPackage.FullName -ErrorAction Stop
+                                        Write-Host "      Resolved path: '$($resolvedPath.Path)'"
+                                        $installPath = $resolvedPath.Path
+                                    }
+                                    catch {
+                                        Write-Host "      Could not resolve path: $($_.Exception.Message)"
+                                        $installPath = $depPackage.FullName
+                                    }
+                                    
+                                    try {
+                                        Write-Host "    Attempting installation with path: '$installPath'"
+                                        Add-AppxProvisionedPackage -Online -PackagePath $installPath -SkipLicense -Verbose
+                                        Write-Host "  Successfully installed: $($depPackage.Name)"
+                                    }
+                                    catch {
+                                        Write-Host "  Failed to install $($depPackage.Name): $($_.Exception.Message)"
+                                        Write-Host "  Exception type: $($_.Exception.GetType().FullName)"
+                                        Write-Host "  HRESULT: $($_.Exception.HResult)"
+                                        
+                                        # Additional troubleshooting
+                                        Write-Host "  Troubleshooting information:"
+                                        Write-Host "    Working directory: $(Get-Location)"
+                                        Write-Host "    Current user: $($env:USERNAME)"
+                                        Write-Host "    File still exists: $(Test-Path $installPath)"
+                                        
+                                        Write-Host "  Continuing with other dependencies..."
+                                    }
+                                } else {
+                                    Write-Host "  ERROR: File not found or not accessible: $($depPackage.FullName)"
+                                    Write-Host "  Skipping installation of $($depPackage.Name)"
                                 }
                             }
                             Write-Host "Dependencies installation completed."
@@ -272,11 +333,45 @@ if ($dependenciesAsset) {
     Write-Host "No dependencies to download."
 }
 
-# Install the MSIX bundle using the modular function
-$installSuccess = Install-Application -PackagePath $msixPath -PackageName $packageName
-
-if (-not $installSuccess) {
-    Write-Host "Installation failed. Exiting..."
+# Final verification before main installation
+Write-Host "Final verification of main MSIX package before installation..."
+if (Test-Path $msixPath -PathType Leaf) {
+    $finalFileSize = (Get-Item $msixPath).Length
+    Write-Host "Main package verified: $msixPath ($([math]::Round($finalFileSize / 1MB, 2)) MB)"
+    
+    # Additional path troubleshooting
+    Write-Host "Pre-installation path analysis:"
+    Write-Host "  Original path: '$msixPath'"
+    Write-Host "  Path length: $($msixPath.Length) characters"
+    Write-Host "  Contains special chars: $($msixPath -match '[^\w\\\.\-_]')"
+    Write-Host "  Parent directory: '$(Split-Path $msixPath -Parent)'"
+    Write-Host "  Filename: '$(Split-Path $msixPath -Leaf)'"
+    Write-Host "  File attributes: $((Get-Item $msixPath).Attributes)"
+    
+    # Test file access
+    try {
+        $fileStream = [System.IO.File]::OpenRead($msixPath)
+        $fileStream.Close()
+        Write-Host "  File access test: SUCCESS"
+    }
+    catch {
+        Write-Host "  File access test: FAILED - $($_.Exception.Message)"
+    }
+    
+    # Additional sleep before main installation
+    Write-Host "Waiting 5 seconds before main package installation..."
+    Start-Sleep -Seconds 5
+    
+    # Install the MSIX bundle using the modular function
+    $installSuccess = Install-Application -PackagePath $msixPath -PackageName $packageName
+    
+    if (-not $installSuccess) {
+        Write-Host "Installation failed. Exiting..."
+        exit 1
+    }
+} else {
+    Write-Host "ERROR: Main MSIX package not found or not accessible: $msixPath"
+    Write-Host "Cannot proceed with installation."
     exit 1
 }# Verify installation using the modular function
 $verificationSuccess = Test-ApplicationInstallation -CommandName "winget" -ApplicationName "WinGet CLI"
