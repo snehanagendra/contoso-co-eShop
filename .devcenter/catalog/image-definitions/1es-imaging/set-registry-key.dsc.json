@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/v3.1.0/bundled/config/document.json",
+  "metadata": {
+    "description": "Add a registry key value"
+  },
+  "resources": [
+    {
+      "name": "SetRegistryValue",
+      "type": "Microsoft.Windows/Registry",
+      "properties": {
+        "keyPath": "HKEY_LOCAL_MACHINE\\SOFTWARE\\MyCompany",
+        "valueName": "MySetting",
+        "valueData": {
+            "String": "MyValue"
+        }
+      }
+    }
+  ]
+}

@@ -7,7 +7,7 @@ if (-not $dscPath) {
 }
 
 # Path to the DSC JSON configuration file (update as needed)
-$jsonPath = "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\install-insomnia.dsc.json"
+$jsonPath = "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\set-registry-key.dsc.json"
 
 if (-not (Test-Path $jsonPath)) {
 	Write-Error "DSC configuration JSON file not found: $jsonPath"
