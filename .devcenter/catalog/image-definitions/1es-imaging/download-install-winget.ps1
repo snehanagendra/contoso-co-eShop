@@ -1,12 +1,110 @@
-
-
-# Hardcoded output folder
-$OutputFolder = "$env:Temp\WinGet_Install"
-$OutputFolder = "C:\ProgramData\Microsoft\DevBoxAgent\1ES"
-
 # Requires Administrator privileges
 #Requires -RunAsAdministrator
 
+# Hardcoded output folder
+$OutputFolder = "C:\ProgramData\Microsoft\DevBoxAgent\1ES"
+
+# Function to install application
+function Install-Application {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath,
+        
+        [Parameter(Mandatory = $true)]
+        [string]$PackageName
+    )
+    
+    Write-Host "Starting application installation using Add-AppxProvisionedPackage..."
+    Write-Host "Package path: $PackagePath"
+    Write-Host "Package name: $PackageName"
+
+    try {
+        # Check if running as administrator
+        $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+        $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        Write-Host "Running as Administrator: $isAdmin"
+
+        if (-not $isAdmin) {
+            Write-Host "WARNING: Not running as administrator - this may cause the installation to fail"
+        }
+
+        Write-Host "Executing Add-AppxProvisionedPackage command..."
+        Write-Host "Current PowerShell version: $($PSVersionTable.PSVersion)"
+        Write-Host "PowerShell edition: $($PSVersionTable.PSEdition)"
+        
+        $installStartTime = Get-Date
+        Write-Host "Installation started at: $installStartTime"
+
+        # Use package name with Add-AppxProvisionedPackage
+        Write-Host "Using package name '$PackageName' for installation"
+        Add-AppxProvisionedPackage -Online -PackagePath $PackagePath -SkipLicense -Verbose
+
+        $installEndTime = Get-Date
+        $installDuration = $installEndTime - $installStartTime
+        Write-Host "Installation completed at: $installEndTime"
+        Write-Host "Installation duration: $($installDuration.TotalSeconds) seconds"
+        Write-Host "Application '$PackageName' provisioned successfully for all users."
+        
+        return $true
+    }
+    catch {
+        Write-Host "Failed to install application '$PackageName': $($_.Exception.Message)"
+        Write-Host "Exception type: $($_.Exception.GetType().FullName)"
+        if ($_.Exception.InnerException) {
+            Write-Host "Inner exception: $($_.Exception.InnerException.Message)"
+        }
+        Write-Host "HRESULT (if available): $($_.Exception.HResult)"
+        Write-Host "You may need to install dependencies first (Visual C++ Redistributable, etc.)"
+        Write-Host "Failed at: $(Get-Date)"
+        
+        # Additional troubleshooting info
+        Write-Host "System information for troubleshooting:"
+        Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
+        Write-Host "OS version: $($PSVersionTable.OS)"
+        Write-Host "Current user: $($env:USERNAME)"
+        
+        return $false
+    }
+}
+
+# Function to verify application installation
+function Test-ApplicationInstallation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CommandName,
+        
+        [Parameter(Mandatory = $false)]
+        [string]$VersionArgument = "--version",
+        
+        [Parameter(Mandatory = $false)]
+        [string]$ApplicationName = $CommandName
+    )
+    
+    Write-Host "Verifying $ApplicationName installation..."
+    try {
+        $commandPath = Get-Command $CommandName -ErrorAction SilentlyContinue
+        if ($commandPath) {
+            try {
+                $version = & $CommandName $VersionArgument
+                Write-Host "$ApplicationName installed successfully! Version: $version"
+                return $true
+            }
+            catch {
+                Write-Host "$ApplicationName command found but version check failed: $($_.Exception.Message)"
+                return $true  # Command exists even if version check fails
+            }
+        } else {
+            Write-Host "$ApplicationName command '$CommandName' not found in PATH. You may need to restart your session."
+            return $false
+        }
+    }
+    catch {
+        Write-Host "Could not verify $ApplicationName installation: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Main execution starts here
 Write-Host "Starting WinGet CLI download and installation..."
 
 # GitHub API URL for WinGet CLI releases
@@ -34,6 +132,18 @@ if (-not $msixAsset) {
 
 Write-Host "Found MSIX bundle: $($msixAsset.name)"
 
+# Find the Dependencies ZIP asset
+$dependenciesAsset = $release.assets | Where-Object { $_.name -like "*Dependencies*.zip" }
+if ($dependenciesAsset) {
+    Write-Host "Found dependencies ZIP: $($dependenciesAsset.name)"
+} else {
+    Write-Host "No dependencies ZIP found in the release assets."
+}
+
+# Extract package name from MSIX filename
+$packageName = $msixAsset.name -replace '\.msixbundle$', ''
+Write-Host "Extracted package name: $packageName"
+
 # Create output folder if not exists
 try {
     if (-not (Test-Path $OutputFolder)) {
@@ -54,16 +164,9 @@ Write-Host "File size from GitHub: $([math]::Round($msixAsset.size / 1MB, 2)) MB
 
 Write-Host "Starting download with Invoke-WebRequest..."
 try {
-    $downloadStartTime = Get-Date
-    Write-Host "Download started at: $downloadStartTime"
-    
     Invoke-WebRequest -Uri $msixAsset.browser_download_url -OutFile $msixPath -UseBasicParsing
-    
-    $downloadEndTime = Get-Date
-    $downloadDuration = $downloadEndTime - $downloadStartTime
-    
-    Write-Host "Download completed successfully at: $downloadEndTime"
-    Write-Host "Download duration: $($downloadDuration.TotalSeconds) seconds"
+
+    Write-Host "Download completed successfully." 
 }
 catch {
     Write-Host "Failed to download MSIX bundle: $($_.Exception.Message)"
@@ -79,11 +182,6 @@ catch {
 Write-Host "Verifying downloaded file..."
 if (-not (Test-Path $msixPath)) {
     Write-Host "ERROR: Downloaded file not found at: $msixPath"
-    Write-Host "Checking if directory exists: $(Test-Path $OutputFolder)"
-    if (Test-Path $OutputFolder) {
-        Write-Host "Directory contents:"
-        Get-ChildItem $OutputFolder | ForEach-Object { Write-Host "  $($_.Name)" }
-    }
     exit 1
 }
 
@@ -94,123 +192,100 @@ Write-Host "Downloaded file size: $([math]::Round($fileSize / 1MB, 2)) MB"
 Write-Host "File creation time: $($fileItem.CreationTime)"
 Write-Host "File last write time: $($fileItem.LastWriteTime)"
 
-# Verify file is not corrupted (basic check)
-if ($fileSize -lt 1MB) {
-    Write-Host "WARNING: File size seems too small for an MSIX bundle"
-}
-Write-Host "File verification completed successfully."
-
-# Install the MSIX bundle using Add-AppxProvisionedPackage
-Write-Host "Starting WinGet CLI installation using Add-AppxProvisionedPackage..."
-Write-Host "Installation method: Add-AppxProvisionedPackage -Online"
-Write-Host "Package path: $msixPath"
-
-try {
-    # Check if running as administrator
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    Write-Host "Running as Administrator: $isAdmin"
+# Download and extract dependencies if available
+if ($dependenciesAsset) {
+    Write-Host "Downloading dependencies ZIP..."
+    $dependenciesPath = Join-Path $OutputFolder $dependenciesAsset.name
+    Write-Host "Dependencies download path: $dependenciesPath"
     
-    if (-not $isAdmin) {
-        Write-Host "WARNING: Not running as administrator - this may cause the installation to fail"
-    }
-    
-    Write-Host "Executing Add-AppxProvisionedPackage command..."
-    Write-Host "Current PowerShell version: $($PSVersionTable.PSVersion)"
-    Write-Host "PowerShell edition: $($PSVersionTable.PSEdition)"
-    
-    $installStartTime = Get-Date
-    Write-Host "Installation started at: $installStartTime"
-    
-    # Try to run in PowerShell 7 inline and capture output
-    if (Get-Command "pwsh.exe" -ErrorAction SilentlyContinue) {
-        Write-Host "PowerShell 7 found, attempting installation with pwsh.exe..."
+    try {
+        Invoke-WebRequest -Uri $dependenciesAsset.browser_download_url -OutFile $dependenciesPath -UseBasicParsing
+        Write-Host "Dependencies download completed successfully."
         
-        # Run the installation command and capture all output
-        $pwshResult = & pwsh.exe -Command "
+        # Verify dependencies file
+        if (Test-Path $dependenciesPath) {
+            $depFileSize = (Get-Item $dependenciesPath).Length
+            Write-Host "Dependencies file size: $([math]::Round($depFileSize / 1MB, 2)) MB"
+            
+            # Extract dependencies
+            $dependenciesExtractPath = Join-Path $OutputFolder "Dependencies"
+            Write-Host "Extracting dependencies to: $dependenciesExtractPath"
+            
             try {
-                Write-Host 'PowerShell 7 - Starting Add-AppxProvisionedPackage...'
-                Write-Host 'Package path: $msixPath'
-                Add-AppxProvisionedPackage -Online -PackagePath '$msixPath' -SkipLicense -Verbose
-                Write-Host 'PowerShell 7 - Installation completed successfully'
+                Expand-Archive -Path $dependenciesPath -DestinationPath $dependenciesExtractPath -Force
+                Write-Host "Dependencies extracted successfully."
+                
+                # List extracted dependencies
+                if (Test-Path $dependenciesExtractPath) {
+                    Write-Host "Extracted dependency files:"
+                    Get-ChildItem $dependenciesExtractPath -Recurse | ForEach-Object {
+                        Write-Host "  $($_.FullName)"
+                    }
+                    
+                    # Install dependencies from x64 folder
+                    $x64DependenciesPath = Join-Path $dependenciesExtractPath "x64"
+                    if (Test-Path $x64DependenciesPath) {
+                        Write-Host "Installing dependencies from x64 folder: $x64DependenciesPath"
+                        
+                        # Find all MSIX/APPX files in the x64 folder
+                        $dependencyPackages = Get-ChildItem $x64DependenciesPath -Filter "*.msix" -Recurse
+                        $dependencyPackages += Get-ChildItem $x64DependenciesPath -Filter "*.appx" -Recurse
+                        
+                        if ($dependencyPackages) {
+                            Write-Host "Found $($dependencyPackages.Count) dependency package(s) to install:"
+                            foreach ($depPackage in $dependencyPackages) {
+                                Write-Host "  Installing: $($depPackage.Name)"
+                                try {
+                                    Add-AppxProvisionedPackage -Online -PackagePath $depPackage.FullName -SkipLicense -Verbose
+                                    Write-Host "  Successfully installed: $($depPackage.Name)"
+                                }
+                                catch {
+                                    Write-Host "  Failed to install $($depPackage.Name): $($_.Exception.Message)"
+                                    Write-Host "  Continuing with other dependencies..."
+                                }
+                            }
+                            Write-Host "Dependencies installation completed."
+                        } else {
+                            Write-Host "No MSIX/APPX packages found in x64 dependencies folder."
+                        }
+                    } else {
+                        Write-Host "x64 dependencies folder not found at: $x64DependenciesPath"
+                        Write-Host "Available folders in dependencies:"
+                        Get-ChildItem $dependenciesExtractPath -Directory | ForEach-Object {
+                            Write-Host "  $($_.Name)"
+                        }
+                    }
+                }
             }
             catch {
-                Write-Host 'PowerShell 7 - Installation failed:'
-                Write-Host 'Error message:' `$_.Exception.Message
-                Write-Host 'Exception type:' `$_.Exception.GetType().FullName
-                Write-Host 'HRESULT:' `$_.Exception.HResult
-                throw `$_.Exception
-            }
-        " 2>&1
-        
-        Write-Host "=== PowerShell 7 Command Output ==="
-        if ($pwshResult) {
-            $pwshResult | ForEach-Object {
-                Write-Host "PWSH7: $_"
+                Write-Host "Failed to extract dependencies: $($_.Exception.Message)"
             }
         } else {
-            Write-Host "PWSH7: No output captured"
+            Write-Host "Dependencies file not found after download."
         }
-        Write-Host "=== End PowerShell 7 Output ==="
-        Write-Host "PowerShell 7 exit code: $LASTEXITCODE"
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "Installation succeeded via PowerShell 7"
-        } else {
-            Write-Host "Installation failed via PowerShell 7, exit code: $LASTEXITCODE"
-            
-            # Parse the error output for more details
-            $errorLines = $pwshResult | Where-Object { $_ -match "Error message:|Exception type:|HRESULT:" }
-            if ($errorLines) {
-                Write-Host "Parsed error details from PowerShell 7:"
-                $errorLines | ForEach-Object { Write-Host "  $_" }
-            }
-            
-            throw "PowerShell 7 installation failed with exit code: $LASTEXITCODE"
-        }
-    } else {
-        Write-Host "PowerShell 7 not available, using current session..."
-        Add-AppxProvisionedPackage -Online -PackagePath $msixPath -SkipLicense -Verbose
     }
-    
-    $installEndTime = Get-Date
-    $installDuration = $installEndTime - $installStartTime
-    Write-Host "Installation completed at: $installEndTime"
-    Write-Host "Installation duration: $($installDuration.TotalSeconds) seconds"
-    Write-Host "WinGet CLI provisioned successfully for all users."
-}
-catch {
-    Write-Host "Failed to install WinGet CLI: $($_.Exception.Message)"
-    Write-Host "Exception type: $($_.Exception.GetType().FullName)"
-    if ($_.Exception.InnerException) {
-        Write-Host "Inner exception: $($_.Exception.InnerException.Message)"
+    catch {
+        Write-Host "Failed to download dependencies: $($_.Exception.Message)"
+        Write-Host "Continuing with installation without dependencies..."
     }
-    Write-Host "HRESULT (if available): $($_.Exception.HResult)"
-    Write-Host "You may need to install dependencies first (Visual C++ Redistributable, etc.)"
-    Write-Host "Failed at: $(Get-Date)"
-    
-    # Additional troubleshooting info
-    Write-Host "System information for troubleshooting:"
-    Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
-    Write-Host "OS version: $($PSVersionTable.OS)"
-    Write-Host "Current user: $($env:USERNAME)"
-    
-    exit 1
+} else {
+    Write-Host "No dependencies to download."
 }
 
-# Verify installation
-Write-Host "Verifying WinGet installation..."
-try {
-    $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-    if ($wingetPath) {
-        $wingetVersion = & winget --version
-        Write-Host "WinGet CLI installed successfully! Version: $wingetVersion"
-    } else {
-        Write-Host "WinGet command not found in PATH. You may need to restart your session."
-    }
-}
-catch {
-    Write-Host "Could not verify WinGet installation: $($_.Exception.Message)"
-}
+# Install the MSIX bundle using the modular function
+$installSuccess = Install-Application -PackagePath $msixPath -PackageName $packageName
+
+if (-not $installSuccess) {
+    Write-Host "Installation failed. Exiting..."
+    exit 1
+}# Verify installation using the modular function
+$verificationSuccess = Test-ApplicationInstallation -CommandName "winget" -ApplicationName "WinGet CLI"
 
 Write-Host "WinGet CLI installation process completed."
+if ($installSuccess -and $verificationSuccess) {
+    Write-Host "Installation and verification both successful!"
+    exit 0
+} else {
+    Write-Host "Installation completed but verification had issues. Check the logs above."
+    exit 0
+}
