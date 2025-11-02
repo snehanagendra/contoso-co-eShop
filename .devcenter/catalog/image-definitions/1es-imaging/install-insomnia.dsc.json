@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/v3.1.0/bundled/config/document.json",
+  "metadata": {
+    "description": "Install Insomnia REST client"
+  },
+  "resources": [
+    {
+      "name": "Install Insomnia",
+      "type": "Microsoft.WinGet/Package",
+      "properties": {
+        "id": "Insomnia.Insomnia"
+      }
+    }
+  ]
+}
