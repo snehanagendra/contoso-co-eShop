@@ -116,10 +116,62 @@ try {
     }
     
     Write-Host "Executing Add-AppxProvisionedPackage command..."
+    Write-Host "Current PowerShell version: $($PSVersionTable.PSVersion)"
+    Write-Host "PowerShell edition: $($PSVersionTable.PSEdition)"
+    
     $installStartTime = Get-Date
     Write-Host "Installation started at: $installStartTime"
     
-    Add-AppxProvisionedPackage -Online -PackagePath $msixPath -SkipLicense -Verbose
+    # Try to run in PowerShell 7 inline and capture output
+    if (Get-Command "pwsh.exe" -ErrorAction SilentlyContinue) {
+        Write-Host "PowerShell 7 found, attempting installation with pwsh.exe..."
+        
+        # Run the installation command and capture all output
+        $pwshResult = & pwsh.exe -Command "
+            try {
+                Write-Host 'PowerShell 7 - Starting Add-AppxProvisionedPackage...'
+                Write-Host 'Package path: $msixPath'
+                Add-AppxProvisionedPackage -Online -PackagePath '$msixPath' -SkipLicense -Verbose
+                Write-Host 'PowerShell 7 - Installation completed successfully'
+            }
+            catch {
+                Write-Host 'PowerShell 7 - Installation failed:'
+                Write-Host 'Error message:' `$_.Exception.Message
+                Write-Host 'Exception type:' `$_.Exception.GetType().FullName
+                Write-Host 'HRESULT:' `$_.Exception.HResult
+                throw `$_.Exception
+            }
+        " 2>&1
+        
+        Write-Host "=== PowerShell 7 Command Output ==="
+        if ($pwshResult) {
+            $pwshResult | ForEach-Object {
+                Write-Host "PWSH7: $_"
+            }
+        } else {
+            Write-Host "PWSH7: No output captured"
+        }
+        Write-Host "=== End PowerShell 7 Output ==="
+        Write-Host "PowerShell 7 exit code: $LASTEXITCODE"
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Installation succeeded via PowerShell 7"
+        } else {
+            Write-Host "Installation failed via PowerShell 7, exit code: $LASTEXITCODE"
+            
+            # Parse the error output for more details
+            $errorLines = $pwshResult | Where-Object { $_ -match "Error message:|Exception type:|HRESULT:" }
+            if ($errorLines) {
+                Write-Host "Parsed error details from PowerShell 7:"
+                $errorLines | ForEach-Object { Write-Host "  $_" }
+            }
+            
+            throw "PowerShell 7 installation failed with exit code: $LASTEXITCODE"
+        }
+    } else {
+        Write-Host "PowerShell 7 not available, using current session..."
+        Add-AppxProvisionedPackage -Online -PackagePath $msixPath -SkipLicense -Verbose
+    }
     
     $installEndTime = Get-Date
     $installDuration = $installEndTime - $installStartTime
