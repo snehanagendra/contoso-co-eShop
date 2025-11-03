@@ -170,17 +170,10 @@ function Install-Bicep {
         New-Item -Path $InstallDirectory -ItemType Directory -Force | Out-Null
     }
     
-    $tempFile = Join-Path $env:TEMP "bicep-temp-$([System.Guid]::NewGuid().ToString('N')[0..7] -join '')"
     $finalPath = Join-Path $InstallDirectory $ExecutableName
     
     try {
         Write-Host "Downloading $($Asset.name) from $($Asset.browser_download_url)..."
-        
-        Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $tempFile
-        
-        Write-Host "Download completed successfully"
-        
-        # Move to final location
         Write-Host "Installing to: $finalPath"
         
         # Remove existing file if it exists
@@ -189,8 +182,9 @@ function Install-Bicep {
             Remove-Item -Path $finalPath -Force
         }
         
-        # Move the downloaded file to the final location
-        Move-Item -Path $tempFile -Destination $finalPath -Force
+        Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $finalPath
+        
+        Write-Host "Download completed successfully"
         
         Write-Host "Installation completed successfully"
         
@@ -214,10 +208,6 @@ function Install-Bicep {
         }
     }
     catch {
-        # Cleanup temp file if it exists
-        if (Test-Path $tempFile) {
-            Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
-        }
         throw "Installation failed: $_"
     }
 }
