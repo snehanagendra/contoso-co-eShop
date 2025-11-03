@@ -57,7 +57,7 @@ function Install-Application {
         }
         
         Write-Host "  Using final path for installation: '$finalPackagePath'"
-        Add-AppxProvisionedPackage -Online -PackagePath $finalPackagePath -PackageName $PackageName -SkipLicense -Verbose
+        Add-AppxProvisionedPackage -Online -PackagePath $finalPackagePath -SkipLicense -Verbose
 
         $installEndTime = Get-Date
         $installDuration = $installEndTime - $installStartTime
