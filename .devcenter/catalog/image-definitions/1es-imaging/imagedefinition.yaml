@@ -17,20 +17,13 @@ tasks:
     description: Install Windows Package Manager CLI
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\download-install-winget.ps1
-  - name: ~/winget
+  - name: ~/powershell
     displayName: "Install Bicep CLI"
     description: Install Bicep CLI
     parameters:
-      package: Microsoft.Bicep
-      version: 0.36.177
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\download-install-bicep.ps1
   - name: ~/powershell
-    displayName: "Install Bicep VS Code Extension"
-    description: Install Bicep extension for Visual Studio Code
-    parameters:
-      command: |
-        code --install-extension ms-azuretools.vscode-bicep
-  - name: ~/powershell
-    displayName: "Configure Bicep DSC Environment"
+    displayName: "Configure Bicep CLI Environment"
     description: Create bicepconfig.json file
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\write-bicep-config.ps1
@@ -39,3 +32,15 @@ tasks:
     description: Apply the Desired State Configuration (DSC) to the system
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config.ps1
+  - name: ~/powershell
+    displayName: "Build DSC bicep files to JSON"
+    description: Build DSC Bicep files to JSON
+    parameters:
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\build-dsc-bicep.ps1
+userTasks:
+  - name: ~/powershell
+    displayName: "Install Bicep VS Code Extension"
+    description: Install Bicep extension for Visual Studio Code
+    parameters:
+      command: |
+        code --install-extension ms-azuretools.vscode-bicep
