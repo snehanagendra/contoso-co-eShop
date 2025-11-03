@@ -176,12 +176,7 @@ function Install-Bicep {
     try {
         Write-Host "Downloading $($Asset.name) from $($Asset.browser_download_url)..."
         
-        # Download with progress
-        $webClient = New-Object System.Net.WebClient
-        $webClient.Headers.Add('User-Agent', 'PowerShell-BicepInstaller')
-        
-        $webClient.DownloadFile($Asset.browser_download_url, $tempFile)
-        $webClient.Dispose()
+        Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $tempFile
         
         Write-Host "Download completed successfully"
         
