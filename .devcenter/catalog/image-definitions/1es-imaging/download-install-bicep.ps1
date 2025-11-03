@@ -1,4 +1,3 @@
-#Requires -Version 5.1
 <#
 .SYNOPSIS
     Downloads and installs Azure Bicep CLI from GitHub releases.
@@ -188,6 +187,14 @@ function Install-Bicep {
         
         # Move to final location
         Write-Host "Installing to: $finalPath"
+        
+        # Remove existing file if it exists
+        if (Test-Path $finalPath) {
+            Write-Host "Removing existing file: $finalPath"
+            Remove-Item -Path $finalPath -Force
+        }
+        
+        # Move the downloaded file to the final location
         Move-Item -Path $tempFile -Destination $finalPath -Force
         
         Write-Host "Installation completed successfully"
