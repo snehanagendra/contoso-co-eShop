@@ -13,11 +13,6 @@ tasks:
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\download-install-dsc.ps1
   - name: ~/powershell
-    displayName: "Install WinGet CLI"
-    description: Install Windows Package Manager CLI
-    parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\download-install-winget.ps1
-  - name: ~/powershell
     displayName: "Install Bicep CLI"
     description: Install Bicep CLI
     parameters:
