@@ -36,7 +36,7 @@ Write-Host "Final detected platform: $platform"
 Write-Host "=== End Detection ==="
 
 # GitHub API URL for releases
-$targetVersion = "v3.2.0-preview.7"
+$targetVersion = "v3.1.2"
 $apiUrl = "https://api.github.com/repos/PowerShell/DSC/releases"
 
 Write-Host "Fetching DSC release info for version $targetVersion..."
