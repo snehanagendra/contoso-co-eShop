@@ -236,7 +236,7 @@ try {
     $architecture = Get-WindowsArchitecture
     
     # Get release information
-    $Version = "v0.36.177"
+    $Version = "v0.38.33"
     $release = Get-BicepRelease -Version $Version
     
     # Find appropriate Windows asset
