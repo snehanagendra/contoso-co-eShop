@@ -18,25 +18,17 @@ tasks:
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\download-install-bicep.ps1
   - name: ~/powershell
-    displayName: "Configure Bicep CLI Environment"
-    description: Create bicepconfig.json file
-    parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\write-bicep-config.ps1
-  - name: ~/powershell
     displayName: "Apply DSC JSON Configuration"
     description: Apply the Desired State Configuration (DSC) via JSON to the system
     parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config-json.ps1
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config.ps1
+      scriptArgs: -ConfigFile "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\set-registry-key.dsc.json"
   - name: ~/powershell
     displayName: "Apply DSC BICEP Configuration"
     description: Apply the Desired State Configuration (DSC) via BICEP to the system
     parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config-bicep.ps1
-  - name: ~/powershell
-    displayName: "Build DSC bicep files to JSON"
-    description: Build DSC Bicep files to JSON
-    parameters:
-      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\build-dsc-bicep.ps1
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config.ps1
+      scriptArgs: -ConfigFile "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\hello_from_bicep_ext_transitional_powershell_7.dsc.bicep"
 userTasks:
   - name: ~/powershell
     displayName: "Install Bicep VS Code Extension"
