@@ -1,0 +1,1 @@
+(New-Item -Path "C:\\Temp\\example_ps7scrip.txt" -ItemType File -Force).FullName
