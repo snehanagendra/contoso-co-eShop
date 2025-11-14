@@ -7,6 +7,11 @@ tasks:
     description: Install Visual Studio Code
     parameters:
       package: Microsoft.VisualStudioCode
+  - name: ~/winget
+    displayName: "Install Az CLI"
+    description: Install Azure CLI
+    parameters:
+      package: Microsoft.AzureCLI
   - name: ~/powershell
     displayName: "Install DSC Preview"
     description: Install Desired State Configuration (DSC)
@@ -29,6 +34,11 @@ tasks:
     parameters:
       script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\apply-dsc-config.ps1
       scriptArgs: -ConfigFile "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\hello_from_bicep_ext_transitional_powershell_7.dsc.bicep"
+  - name: ~/powershell
+    displayName: "Deploy 1ES BICEP Configuration"
+    description: Deploy the 1ES BICEP to Azure to get outputs
+    parameters:
+      script: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\1es-imaging-catalog-01\1es-imaging\deploy-bicep.ps1
 userTasks:
   - name: ~/powershell
     displayName: "Install Bicep VS Code Extension"
