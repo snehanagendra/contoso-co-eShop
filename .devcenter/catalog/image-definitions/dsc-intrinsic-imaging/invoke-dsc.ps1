@@ -295,7 +295,9 @@ function InstallDSCv3 {
             
             Write-Host "Downloading DSC $dscVersion from: $dscUrl"
             
-            $zipPath = Join-Path -Path $env:TEMP -ChildPath "dsc-v3.zip"
+            # Download directly to the install location
+            $zipPath = Join-Path -Path $script:InstallPath -ChildPath "dsc-v3.zip"
+            Write-Host "Download location: $zipPath"
             
             WithRetry -ScriptBlock {
                 Invoke-WebRequest -Uri $dscUrl -OutFile $zipPath
