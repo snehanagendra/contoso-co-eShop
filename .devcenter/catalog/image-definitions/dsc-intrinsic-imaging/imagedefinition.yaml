@@ -6,4 +6,4 @@ tasks:
     displayName: "Apply DSC JSON Configuration"
     description: Apply the Desired State Configuration (DSC) via JSON to the system
     parameters:
-      configurationFile: "C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-intrinsic-imaging-catalog-01\dsc-intrinsic-imaging\set-registry-key.dsc.bicep"
+      configurationFile: 'C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-intrinsic-imaging-catalog-01\dsc-intrinsic-imaging\set-registry-key.dsc.bicep'
