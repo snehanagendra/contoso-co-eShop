@@ -392,7 +392,7 @@ $tempErrFile = [System.IO.Path]::GetTempFileName() + ".err.txt"
 
 try {
     # Build the DSC command using full executable path
-    $dscCommand = "`"$dscExePath`" config set --file `"$ConfigurationFile`" --format json"
+    $dscCommand = "`"$dscExePath`" config set --file `"$ConfigurationFile`" -o pretty-json"
     
     Write-Host "Applying DSC configuration: $dscCommand"
     
