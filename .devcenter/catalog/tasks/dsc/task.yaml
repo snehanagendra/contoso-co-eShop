@@ -1,7 +1,7 @@
 $schema: 1.0
 name: dsc
 description: Installs PowerShell 7, Bicep CLI, and DSC v3, then applies a DSC configuration file.
-command_: .\Invoke-DSC.ps1 -ConfigurationFile {{configurationFile}}
+command: .\Invoke-DSC.ps1 -ConfigurationFile {{configurationFile}}
 parameters:
   configurationFile:
     type: string
