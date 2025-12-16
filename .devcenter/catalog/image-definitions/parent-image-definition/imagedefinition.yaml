@@ -13,7 +13,7 @@ tasks:
     displayName: "Configure Configuration for DSC"
     description: Create bicepconfig.json file
     parameters:
-      directoryPath: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions
+      bicepConfigDirectoryPath: C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions
 
   - name: powershell
     parameters:
