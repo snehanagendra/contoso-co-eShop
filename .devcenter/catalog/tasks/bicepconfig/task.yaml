@@ -1,0 +1,14 @@
+$schema: 1.0
+name: bicepconfig
+description: Writes a standard bicep configuration file to be used by DevBox for DSC support at the desired path
+command: .\Bicep-Config.ps1 -DirectoryPath {{bicepConfigDirectoryPath}}
+parameters:
+  bicepConfigDirectoryPath:
+    type: string
+    required: true
+    description: The directory path where the bicep configuration file will be written. The directory must be located on the local machine.
+  extensionLocation:
+    type: string
+    required: false
+    description: An optional extension reference (registry reference like 'br:...', or URL) for the DSC extension. If not provided, the extension will be downloaded from a predefined URI.
+  
