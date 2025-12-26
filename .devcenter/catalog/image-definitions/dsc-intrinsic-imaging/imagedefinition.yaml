@@ -9,7 +9,12 @@ extends:
 
 tasks:
   - name: dsc
-    displayName: "Apply DSC JSON Configuration"
-    description: Apply the Desired State Configuration (DSC) via JSON to the system
+    displayName: "Apply DSC Bicep Configuration - use registry resource"
+    description: Apply the Desired State Configuration (DSC) via Bicep to the system
     parameters:
       configurationFile: 'C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-intrinsic-imaging-catalog-01\dsc-intrinsic-imaging\set-registry-key.dsc.bicep'
+  - name: dsc
+    displayName: "Apply DSC Bicep Configuration -uses transitional Powershell resource"
+    description: Apply the Desired State Configuration (DSC) via Bicep to the system using transitional PowerShell resource
+    parameters:
+      configurationFile: 'C:\ProgramData\Microsoft\DevBoxAgent\ImageDefinitions\dsc-intrinsic-imaging-catalog-01\dsc-intrinsic-imaging\use-transitional-powershell.dsc.bicep'
